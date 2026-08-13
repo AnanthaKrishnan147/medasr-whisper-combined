@@ -3,3 +3,5 @@ test/test_chat.py
 models/
 
 .env
+
+__pycache__/
