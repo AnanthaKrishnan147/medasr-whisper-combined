@@ -1,0 +1,5 @@
+asr_venv/
+test/test_chat.py
+models/
+
+.env
