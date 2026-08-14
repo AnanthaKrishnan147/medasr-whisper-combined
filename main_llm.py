@@ -3,6 +3,8 @@ import queue
 import threading
 import time
 import importlib
+import logging
+from datetime import datetime
 import torch
 import numpy as np
 import sounddevice as sd
@@ -50,6 +52,18 @@ silero_vad = None
 silero_utils = None
 silero_available = False
 
+# Timing logger for latency measurement
+LOG_FILE = os.path.join(os.getcwd(), "transcription_latency.log")
+logging.basicConfig(
+    filename=LOG_FILE,
+    level=logging.INFO,
+    format='%(asctime)s %(message)s',
+    force=True,
+)
+
+def log_timing(stage, seconds):
+    logging.info(f"{stage}: {seconds:.3f}s")
+
 def audio_callback(indata, frames, time, status):
     """Receives audio chunks from the microphone in a background thread."""
     if status:
@@ -63,7 +77,7 @@ def synthesize_transcripts(whisper_text, medasr_text):
     """Passes both transcripts to OpenAI to get a final, unified output."""
     if not whisper_text and not medasr_text:
         return "No speech detected."
-        
+
     prompt = f"""
     You are an expert medical transcriptionist. I have two speech-to-text outputs 
     from the same audio clip. 
@@ -77,7 +91,8 @@ def synthesize_transcripts(whisper_text, medasr_text):
     
     Output ONLY the final corrected transcript, nothing else.
     """
-    
+
+    start = time.perf_counter()
     response = client.chat.completions.create(
         model="gpt-4o-mini",  # Fast and cost-effective; swap to "gpt-4o" for complex synthesis
         messages=[
@@ -86,7 +101,9 @@ def synthesize_transcripts(whisper_text, medasr_text):
         ],
         temperature=0.2
     )
-    
+    elapsed = time.perf_counter() - start
+    log_timing("LLM synthesis", elapsed)
+
     return response.choices[0].message.content.strip()
 
 # ==========================================
@@ -100,19 +117,30 @@ def _process_loop():
         except queue.Empty:
             continue
 
+        overall_start = time.perf_counter()
         print("\n--- Processing New Audio Chunk ---")
 
-        # Transcribe via both models
+        # Whisper timing
+        start = time.perf_counter()
         whisper_text = whisper_asr.transcribe(audio_array)
+        whisper_elapsed = time.perf_counter() - start
+        log_timing("Whisper transcription", whisper_elapsed)
         print(f"[Whisper]: {whisper_text}")
 
+        # MedASR timing
+        start = time.perf_counter()
         medasr_text = medasr_asr.transcribe(audio_array)
+        medasr_elapsed = time.perf_counter() - start
+        log_timing("MedASR transcription", medasr_elapsed)
         print(f"[MedASR] : {medasr_text}")
 
         # Synthesize final output
         if whisper_text or medasr_text:
             final_output = synthesize_transcripts(whisper_text, medasr_text)
             print(f"\n✅ [FINAL LLM OUTPUT]: {final_output}\n")
+
+        total_elapsed = time.perf_counter() - overall_start
+        log_timing("Overall utterance delay", total_elapsed)
 
 
 def _vad_worker(sampling_rate=SAMPLE_RATE,
@@ -130,7 +158,8 @@ def _vad_worker(sampling_rate=SAMPLE_RATE,
     silence_samples = int(silence_timeout_s * sampling_rate)
     min_speech_samples = int(min_speech_s * sampling_rate)
 
-    # Buffer only the current utterance while a speech event is active.
+    # Keep a short pre-speech buffer so we never drop the beginning of the first sentence.
+    pre_speech_buffer = np.zeros(0, dtype=np.float32)
     speech_buffer = np.zeros(0, dtype=np.float32)
     speaking = False
     silence_counter = 0
@@ -156,6 +185,24 @@ def _vad_worker(sampling_rate=SAMPLE_RATE,
             time.sleep(0.05)
             continue
 
+        if not speaking:
+            pre_speech_buffer = np.concatenate((pre_speech_buffer, frame))
+            if pre_speech_buffer.shape[0] > sampling_rate * 2:
+                pre_speech_buffer = pre_speech_buffer[-sampling_rate * 2:]
+
+            # Energy gate: start the utterance at the first real speech signal so the first sentence is not dropped.
+            rms = np.sqrt(np.mean(frame ** 2))
+            if rms > 0.01:
+                speech_buffer = pre_speech_buffer.copy()
+                pre_speech_buffer = np.zeros(0, dtype=np.float32)
+                speaking = True
+                silence_counter = 0
+                continue
+            else:
+                # Keep a short silent history but do not drop the beginning of the first sentence.
+                time.sleep(0.01)
+                continue
+
         speech_buffer = np.concatenate((speech_buffer, frame))
 
         # Keep a practical cap on the utterance buffer.
@@ -168,13 +215,11 @@ def _vad_worker(sampling_rate=SAMPLE_RATE,
         try:
             if silero_available:
                 get_speech_timestamps = silero_utils[0]
-                # FIX: Convert numpy array to torch tensor
                 tensor_window = torch.from_numpy(window)
                 timestamps = get_speech_timestamps(tensor_window, silero_vad, sampling_rate)
             else:
                 timestamps = []
         except Exception as e:
-            # Added error print to catch failures here
             print(f"[VAD Processing Warning]: {e}")
             timestamps = []
 
@@ -188,18 +233,13 @@ def _vad_worker(sampling_rate=SAMPLE_RATE,
             speaking = True
             silence_counter = 0
         else:
-            if speaking:
-                silence_counter += len(frame)
-            else:
-                # keep the buffer small while idle
-                if speech_buffer.shape[0] > frame_samples * 4:
-                    speech_buffer = speech_buffer[-frame_samples * 4:]
+            silence_counter += len(frame)
 
         if speaking and silence_counter >= silence_samples:
             if speech_buffer.shape[0] >= min_speech_samples:
-                # Emit a complete utterance only once, and only after real silence.
                 audio_queue.put(speech_buffer.copy())
             speech_buffer = np.zeros(0, dtype=np.float32)
+            pre_speech_buffer = np.zeros(0, dtype=np.float32)
             speaking = False
             silence_counter = 0
 

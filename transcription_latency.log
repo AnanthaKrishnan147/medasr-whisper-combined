@@ -1,0 +1,49 @@
+2026-08-14 11:52:34,715 Whisper transcription: 1.234s
+2026-08-14 11:52:34,715 MedASR transcription: 2.345s
+2026-08-14 11:52:34,715 LLM synthesis: 3.456s
+2026-08-14 11:52:34,715 Overall utterance delay: 7.035s
+2026-08-14 12:03:40,425 Whisper transcription: 128.121s
+2026-08-14 12:03:42,265 MedASR transcription: 1.839s
+2026-08-14 12:03:48,403 HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-08-14 12:03:48,414 LLM synthesis: 6.149s
+2026-08-14 12:03:48,414 Overall utterance delay: 136.111s
+2026-08-14 12:44:22,013 Whisper transcription: 123.293s
+2026-08-14 12:44:22,210 MedASR transcription: 0.197s
+2026-08-14 12:44:24,742 HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-08-14 12:44:24,754 LLM synthesis: 2.543s
+2026-08-14 12:44:24,754 Overall utterance delay: 126.034s
+2026-08-14 12:48:31,759 Whisper transcription: 126.512s
+2026-08-14 12:48:34,231 MedASR transcription: 2.471s
+2026-08-14 12:51:01,324 HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-08-14 12:51:01,335 LLM synthesis: 147.104s
+2026-08-14 12:51:01,335 Overall utterance delay: 276.088s
+2026-08-14 12:56:30,508 Whisper transcription: 125.740s
+2026-08-14 12:56:31,943 MedASR transcription: 1.435s
+2026-08-14 12:56:34,948 HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-08-14 12:56:34,959 LLM synthesis: 3.016s
+2026-08-14 12:56:34,959 Overall utterance delay: 130.191s
+2026-08-14 13:05:57,856 Whisper transcription: 128.308s
+2026-08-14 13:05:58,024 MedASR transcription: 0.168s
+2026-08-14 13:06:00,307 HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-08-14 13:06:00,319 LLM synthesis: 2.295s
+2026-08-14 13:06:00,320 Overall utterance delay: 130.772s
+2026-08-14 13:07:00,223 Whisper transcription: 139.479s
+2026-08-14 13:07:02,445 MedASR transcription: 2.222s
+2026-08-14 13:07:04,620 HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-08-14 13:07:04,621 LLM synthesis: 2.175s
+2026-08-14 13:07:04,621 Overall utterance delay: 143.877s
+2026-08-14 13:08:20,498 Whisper transcription: 140.179s
+2026-08-14 13:08:20,706 MedASR transcription: 0.207s
+2026-08-14 13:08:22,849 HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-08-14 13:08:22,850 LLM synthesis: 2.144s
+2026-08-14 13:08:22,850 Overall utterance delay: 142.530s
+2026-08-14 13:09:24,913 Whisper transcription: 139.500s
+2026-08-14 13:09:26,822 MedASR transcription: 1.909s
+2026-08-14 13:09:29,777 HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-08-14 13:09:29,778 LLM synthesis: 2.956s
+2026-08-14 13:09:29,779 Overall utterance delay: 144.366s
+2026-08-14 13:12:57,082 Whisper transcription: 126.695s
+2026-08-14 13:12:58,341 MedASR transcription: 1.259s
+2026-08-14 13:13:00,460 HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-08-14 13:13:00,461 LLM synthesis: 2.120s
+2026-08-14 13:13:00,461 Overall utterance delay: 130.075s
