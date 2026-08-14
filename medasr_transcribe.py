@@ -1,4 +1,22 @@
 import torch
+# Guard against torchaudio native extension import failures (missing CUDA runtime).
+try:
+    import torchaudio  # type: ignore
+except Exception as _torchaudio_err:
+    import types, sys, importlib.util
+    dummy = types.ModuleType('torchaudio')
+    def _raise_on_use(*args, **kwargs):
+        raise RuntimeError(
+            "torchaudio native extension failed to load. Install a compatible torchaudio wheel or ensure CUDA libs are available. "
+            f"Original error: {_torchaudio_err}")
+    dummy.load = _raise_on_use
+    dummy.info = lambda *a, **k: None
+    dummy.__version__ = '0.0.0'
+    dummy.__spec__ = importlib.util.spec_from_loader('torchaudio', loader=None)
+    dummy.__file__ = '<torchaudio_dummy>'
+    dummy.__path__ = []
+    sys.modules['torchaudio'] = dummy
+
 from transformers import AutoProcessor, AutoModelForCTC
 
 class MedASRRealTime:
